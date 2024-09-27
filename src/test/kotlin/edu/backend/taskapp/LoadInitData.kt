@@ -1,17 +1,27 @@
 package edu.backend.taskapp
 
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.jdbc.Sql
 
 @SpringBootTest
-@Sql("/import-users.sql", "/import-priorities.sql", "/import-status.sql", "/import-tasks.sql", "/import-reminders.sql")
-/**
- * This class will load the initial data into the database
- */
-class LoadInitData (
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Sql(
+    statements = [
+        "DELETE FROM public.reminder",
+        "DELETE FROM public.task",
+        "DELETE FROM public.priority",
+        "DELETE FROM public.status",
+        "DELETE FROM public.users"
+    ],
+    executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD
+)
+@Sql(
+    scripts = ["/import-users.sql", "/import-priorities.sql", "/import-status.sql", "/import-tasks.sql", "/import-reminders.sql"],
+    executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD
+)
+class LoadInitData(
     @Autowired
     val taskRepository: TaskRepository,
 ) {
@@ -21,4 +31,11 @@ class LoadInitData (
         val taskList: List<Task> = taskRepository.findAll()
         Assertions.assertTrue(taskList.size == 2)
     }
+
+    @Test
+    fun testTaskFindById() {
+        val task: Task = taskRepository.findById(1).get()
+        Assertions.assertTrue(task.id?.toInt() == 1)
+    }
+
 }
